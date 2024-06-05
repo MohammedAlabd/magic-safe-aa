@@ -1,27 +1,53 @@
 import { useEffect, useCallback, useState } from "react";
 import { useMagic } from "../magic/MagicProvider";
-import { getNetworkUrl } from "@/utils/network";
-import { Safe4337Pack } from "@safe-global/relay-kit";
+import { getBundlerUrl, getNetworkUrl } from "@/utils/network";
+import { SmartAccountClient } from "permissionless";
+import { providerToSmartAccountSigner } from "permissionless";
+import {
+  ENTRYPOINT_ADDRESS_V07,
+  createSmartAccountClient,
+} from "permissionless";
+import { signerToSafeSmartAccount } from "permissionless/accounts";
+import { createPimlicoBundlerClient } from "permissionless/clients/pimlico";
+import { http } from "viem";
+import { sepolia } from "viem/chains";
+import { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/_types/types";
 
 export const useSafeProvider = () => {
-  const { magic } = useMagic();
-  const [smartClient, setSmartClient] = useState<Safe4337Pack>();
+  const { magic, publicClient } = useMagic();
+  const [smartClient, setSmartClient] =
+    useState<SmartAccountClient<ENTRYPOINT_ADDRESS_V07_TYPE>>();
   const connectToSmartContractAccount = useCallback(async () => {
-    if (!magic) return;
-    const user = await magic.user.getMetadata();
+    if (!magic || !publicClient) return;
 
-    const client = await Safe4337Pack.init({
-      provider: getNetworkUrl(),
-      rpcUrl: getNetworkUrl(),
-      bundlerUrl: `https://api.pimlico.io/v1/sepolia/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`,
-      options: {
-        owners: [user.publicAddress || ""],
-        threshold: 1,
+    const magicProvider = await magic.wallet.getProvider();
+    const smartAccountSigner =
+      await providerToSmartAccountSigner(magicProvider);
+
+    const smartAccount = await signerToSafeSmartAccount(publicClient, {
+      signer: smartAccountSigner,
+      safeVersion: "1.4.1",
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
+    });
+
+    const pimlicoBundlerClient = createPimlicoBundlerClient({
+      transport: http(getBundlerUrl()),
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
+    });
+
+    const smartAccountClient = createSmartAccountClient({
+      account: smartAccount,
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      chain: sepolia,
+      bundlerTransport: http(getBundlerUrl()),
+      middleware: {
+        gasPrice: async () =>
+          (await pimlicoBundlerClient.getUserOperationGasPrice()).standard, // if using pimlico bundler
       },
     });
 
-    setSmartClient(client);
-  }, [magic]);
+    setSmartClient(smartAccountClient);
+  }, [magic, publicClient]);
 
   useEffect(() => {
     if (magic?.user.isLoggedIn) {
@@ -29,7 +55,6 @@ export const useSafeProvider = () => {
     }
   }, [magic?.user.isLoggedIn, connectToSmartContractAccount]);
 
-  // Returns the SmartClient for use in components.
   return {
     smartClient,
   };

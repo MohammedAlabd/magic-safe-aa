@@ -11,6 +11,8 @@ import TransactionHistory from "@/components/ui/TransactionHistory";
 import Image from "next/image";
 import Link from "public/link.svg";
 import { useSafeProvider } from "@/components/safe/useSafeProvider";
+import { isAddress, parseEther } from "viem";
+import showToast from "@/utils/showToast";
 
 const SendTransaction = () => {
   const { smartClient } = useSafeProvider();
@@ -27,36 +29,36 @@ const SendTransaction = () => {
     setToAddressError(false);
   }, [amount, toAddress]);
 
-  // const sendTransaction = useCallback(async () => {
-  //   if (!isAddress(toAddress)) {
-  //     return setToAddressError(true);
-  //   }
-  //   if (isNaN(Number(amount))) {
-  //     return setAmountError(true);
-  //   }
-  //   setDisabled(true);
-  //   const result = await smartClient?.sendUserOperation({
-  //     uo: {
-  //       target: toAddress,
-  //       data: '0x',
-  //       value: parseEther(amount),
-  //     },
-  //     account: smartClient.account!,
-  //   })
-  //   if (result?.hash) {
-  //     setToAddress('');
-  //     setAmount('');
-  //     console.log('Transaction hash:', result.hash);
-  //     showToast({
-  //       message: 'Transaction Successful. Wait for UserOp receipt.',
-  //       type: 'success',
-  //     });
-  //     const receipt = await smartClient?.waitForUserOperationTransaction({ hash: result.hash });
-  //     setHash(receipt);
-  //     console.log('UserOp Transaction receipt:', receipt);
-  //   }
-  //   setDisabled(false);
-  // }, [smartClient, amount, toAddress]);
+  const sendTransaction = useCallback(async () => {
+    if (!smartClient || !smartClient.account) return;
+
+    if (!isAddress(toAddress)) {
+      return setToAddressError(true);
+    }
+    if (isNaN(Number(amount))) {
+      return setAmountError(true);
+    }
+    setDisabled(true);
+
+    // @ts-ignore
+    const result = await smartClient.sendTransaction({
+      to: toAddress,
+      value: parseEther(amount),
+    });
+
+    if (result) {
+      setToAddress("");
+      setAmount("");
+      console.log("Transaction hash:", result);
+      showToast({
+        message: "Transaction Successful.",
+        type: "success",
+      });
+      setHash(result);
+      console.log("UserOp Transaction receipt:", result);
+    }
+    setDisabled(false);
+  }, [smartClient, amount, toAddress]);
 
   return (
     <Card>
@@ -86,9 +88,12 @@ const SendTransaction = () => {
       {amountError ? (
         <ErrorText className="error">Invalid amount</ErrorText>
       ) : null}
-      {/* <FormButton onClick={sendTransaction} disabled={!toAddress || !amount || disabled}> */}
-      {/*   Send Transaction */}
-      {/* </FormButton> */}
+      <FormButton
+        onClick={sendTransaction}
+        disabled={!toAddress || !amount || disabled}
+      >
+        Send Transaction
+      </FormButton>
       {hash ? (
         <>
           <Spacer size={20} />

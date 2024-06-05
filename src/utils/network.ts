@@ -20,6 +20,9 @@ export const getNetworkUrl = () => {
   }
 };
 
+export const getBundlerUrl = () =>
+  `https://api.pimlico.io/v1/sepolia/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`;
+
 export const getChainId = () => {
   switch (process.env.NEXT_PUBLIC_BLOCKCHAIN_NETWORK) {
     case Network.POLYGON:

@@ -1,7 +1,7 @@
-import React, { useCallback, useState } from 'react';
-import { useMagic } from '../MagicProvider';
-import showToast from '@/utils/showToast';
-import Spinner from '@/components/ui/Spinner';
+import React, { useCallback, useState } from "react";
+import { useMagic } from "../MagicProvider";
+import showToast from "@/utils/showToast";
+import Spinner from "@/components/ui/Spinner";
 
 const GetIdToken = () => {
   const { magic } = useMagic();
@@ -13,10 +13,10 @@ const GetIdToken = () => {
       setDisabled(true);
       const idToken = await magic.user.getIdToken();
       setDisabled(false);
-      console.log('ID Token: ' + idToken);
+      console.log("ID Token: " + idToken);
       showToast({
-        message: 'Please check console for the ID Token Log',
-        type: 'success',
+        message: "Please check console for the ID Token Log",
+        type: "success",
       });
     } catch (error) {
       setDisabled(false);
@@ -26,17 +26,22 @@ const GetIdToken = () => {
 
   return (
     <div className="wallet-method-container">
-      <button className="wallet-method" onClick={getWalletType} disabled={disabled}>
+      <button
+        className="wallet-method"
+        onClick={getWalletType}
+        disabled={disabled}
+      >
         {disabled ? (
           <div className="loading-container w-[86px]">
             <Spinner />
           </div>
         ) : (
-          'getIdToken()'
+          "getIdToken()"
         )}
       </button>
       <div className="wallet-method-desc">
-        Generates a Decentralized Id Token which acts as a proof of authentication to resource servers.
+        Generates a Decentralized Id Token which acts as a proof of
+        authentication to resource servers.
       </div>
     </div>
   );

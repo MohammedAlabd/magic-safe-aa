@@ -23,7 +23,6 @@ const UserInfo = ({ setToken }: LoginProps) => {
 
   const getBalance = useCallback(async () => {
     if (magicAddress && publicClient) {
-      console.log("MAGIC BALANCE: ", magicAddress);
       const magicBalance = await publicClient?.getBalance({
         address: magicAddress as `0x${string}`,
       });
@@ -32,7 +31,6 @@ const UserInfo = ({ setToken }: LoginProps) => {
       } else {
         setMagicBalance(formatEther(magicBalance));
       }
-      console.log("MAGIC BALANCE: ", formatEther(magicBalance));
     }
     if (scaAddress && publicClient) {
       const aaBalance = await publicClient?.getBalance({
@@ -43,15 +41,12 @@ const UserInfo = ({ setToken }: LoginProps) => {
       } else {
         setScaBalance(formatEther(aaBalance));
       }
-      console.log("SMART ACCOUNT BALANCE: ", formatEther(aaBalance));
     }
   }, [scaAddress, magicAddress, publicClient]);
 
   const getSmartContractAccount = useCallback(async () => {
     if (smartClient) {
-      console.log("getting the address..");
-      const address = await smartClient.protocolKit.getAddress();
-      console.log("address", address);
+      const address = smartClient.account?.address;
       setScaAddress(address);
     }
   }, [smartClient]);
